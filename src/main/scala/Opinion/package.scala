@@ -1,18 +1,22 @@
 import Comete._
+import common._
+import scala.collection.parallel.CollectionConverters._
 
 package object Opinion {
 
   // Si n es el numero de agentes, estos se identifican
   // con los enteros entre 0 y n−1
   // O sea el conjunto de Agentes A es
-  // implicitamente el conjunto {0,1,2, ... , n−1}
-  // Si b:BeliefConf , para cada i en Int , b[i] es un numero
+  // implicitamente el conjunto {0,1,2, ..., n−1}
+  // Si b:BeliefConf, para cada i en Int, b[i] es un numero
   // entre 0 y 1 que indica cuanto cree el agente i en
   // la veracidad de la proposicion p
   // Si existe i: b(i)<0 o b(i)>1 b esta mal definida
 
+  type FunctionUpdate = (SpecificBelief, SpecificWeightedGraph) => SpecificBelief
+
   type SpecificBelief = Vector[Double]
-  // Si b:SpecificBelief , para cada i en Int , b[i] es un
+  // Si b:SpecificBelief, para cada i en Int, b[i] es un
   // numero entre 0 y 1 que indica cuanto cree el
   // agente i en la veracidad de la proposicion p
   // El numero de agentes es b.length
@@ -32,7 +36,7 @@ package object Opinion {
   def rho(alpha: Double, beta: Double): AgentsPolMeasure = {
 
     (sb: SpecificBelief, dist: DistributionValues) => {
-      // sb   = Vector con la creencia de cada agente
+      // sb = Vector con la creencia de cada agente
       // dist = Vector(0.0, 0.25, 0.5, 0.75, 1.0) por ejemplo
 
       val n = sb.length // número de agentes
@@ -129,6 +133,44 @@ package object Opinion {
     }
   }
 
+  def confBiasUpdatePar(b: SpecificBelief, swg: SpecificWeightedGraph): SpecificBelief = {
+
+    val (graf, n) = swg  // desempaca igual que confBiasUpdate
+
+    // PARALELISMO DE DATOS:
+    // Cada agente i es independiente de los demas porque solo lee b (inmutable)
+    // Usamos .par de scala.collection.parallel para distribuir entre nucleos
+    val resultadoParalelo = (0 until n).par.map { i =>
+
+      // Encontrar Ai — agentes que influyen sobre i (igual que version secuencial)
+      val Ai = (0 until n).filter(j => graf(j, i) > 0)
+
+      // PARALELISMO DE TAREAS:
+      // Dividimos Ai en dos mitades y las procesamos simultaneamente
+      // usando common.parallel (disponible via import common._)
+      val (mitadIzq, mitadDer) = Ai.splitAt(Ai.length / 2)
+
+      def sumarTerminos(agentes: Seq[Int]): Double =
+        agentes.map { j =>
+          val beta       = 1.0 - math.abs(b(j) - b(i))  // similitud entre j e i
+          val influencia = graf(j, i)                     // I(j,i)
+          val diferencia = b(j) - b(i)                   // direccion del cambio
+          beta * influencia * diferencia                  // termino completo
+        }.sum
+
+      // Ejecutamos ambas mitades en paralelo con common.parallel
+      val (sumaIzq, sumaDer) = parallel(
+        sumarTerminos(mitadIzq),
+        sumarTerminos(mitadDer)
+      )
+
+      // Nueva creencia del agente i (misma formula que confBiasUpdate)
+      b(i) + (sumaIzq + sumaDer) / Ai.length
+    }
+
+    // Convertimos de vuelta a Vector secuencial (mismo tipo que SpecificBelief)
+    resultadoParalelo.toVector
+  }
 
 
 }

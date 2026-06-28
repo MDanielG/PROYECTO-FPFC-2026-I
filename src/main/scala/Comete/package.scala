@@ -37,7 +37,7 @@ package object Comete {
     }
   }
 
-  def rhoCMTGen(alpha: Double, beta: Double): MedidaPol = {
+  def rhoCMT_Gen(alpha: Double, beta: Double): MedidaPol = {
     (distribucion: Distribution) => {
       val (frecuencias, valores) = distribucion
 

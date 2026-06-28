@@ -62,7 +62,7 @@ println("=" * 60)
 println("PRUEBAS: rhoCMTGen (alpha=1.2, beta=1.2)")
 println("=" * 60)
 
-val cmt1 = rhoCMTGen(1.2, 1.2)
+val cmt1 = rhoCMT_Gen(1.2, 1.2)
 
 // Resultados esperados segun el enunciado
 val res_max   = cmt1(pi_max,         likert5)  // esperado: 0.379
@@ -171,7 +171,7 @@ val todos_norm = List(norm_max, norm_min, norm_der, norm_izq, norm_int1,
   norm_int2, norm_int3, norm_cc, norm_cd, norm_ci)
 assert(todos_norm.forall(v => v >= 0.0 && v <= 1.0),
   "Fallo: algun valor normalizado esta fuera de [0, 1]")
-println("       OK: todos en rango")
+println("       todos en rango")
 
 println()
 println("======================================================")

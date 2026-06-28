@@ -173,4 +173,47 @@ package object Opinion {
   }
 
 
+  // aplica la función de actualización fu, t veces, partiendo
+  // de la creencia b0, y devuelve TODA la secuencia de creencias [b0, b1, ..., bt]
+  // (longitud t+1). Recursión de cola que acumula cada estado intermedio.
+  def simulate(fu: FunctionUpdate, swg: SpecificWeightedGraph,
+               b0: SpecificBelief, t: Int): IndexedSeq[SpecificBelief] = {
+
+    // Recorre el tiempo de forma recursiva (recursión de cola):
+    //   b      = creencia en el instante actual
+    //   pasos  = cuántas actualizaciones faltan
+    //   acc    = secuencia de creencias acumuladas hasta ahora
+    def evolucionar(b: SpecificBelief, pasos: Int,
+                    acc: Vector[SpecificBelief]): Vector[SpecificBelief] = {
+      if (pasos == 0) acc :+ b                            // último estado: lo agrego y termino
+      else evolucionar(fu(b, swg), pasos - 1, acc :+ b)   // guardo b y avanzo un instante con fu
+    }
+
+    evolucionar(b0, t, Vector())
+  }
+
+  // igual que rho pero usando PARALELISMO DE DATOS para contar
+  // los agentes de cada intervalo (recorre el vector de creencias con .par).
+  // Da exactamente el mismo número que rho; solo busca acelerar el conteo.
+  def rhoPar(alpha: Double, beta: Double): AgentsPolMeasure = {
+    (sb: SpecificBelief, dist: DistributionValues) => {
+      val n = sb.length
+      val k = dist.length
+      val limites: Vector[(Double, Double)] = Vector.tabulate(k) { i =>
+        val limInf = if (i == 0) 0.0 else (dist(i - 1) + dist(i)) / 2.0
+        val limSup = if (i == k - 1) 1.0000001 else (dist(i) + dist(i + 1)) / 2.0
+        (limInf, limSup)
+      }
+      // PARALELISMO DE DATOS: el conteo de cada intervalo recorre el vector de
+      // creencias en paralelo con .par (útil cuando n es grande, p.ej. 2^15).
+      val frecuencias: Frequency = Vector.tabulate(k) { i =>
+        val (limInf, limSup) = limites(i)
+        val conteo = sb.par.count(creencia => creencia >= limInf && creencia < limSup)
+        conteo.toDouble / n.toDouble
+      }
+      val medida = normalizar(rhoCMT_Gen(alpha, beta))
+      medida(frecuencias, dist)
+    }
+  }
+
 }

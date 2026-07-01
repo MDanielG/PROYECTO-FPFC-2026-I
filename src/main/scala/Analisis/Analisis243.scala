@@ -1,21 +1,8 @@
-// ============================================================================
-//  PUNTO 2.4.3 — Producir datos para la evaluación comparativa
-//                (versiones secuencial vs concurrente)
-//
-//  Usa org.scalameter (vía Benchmark.tiempoDe / compararMedidasPol /
-//  compararFuncionesAct) y expresiones for para generar las tablas de tiempos:
-//    (A) rho            vs rhoPar
-//    (B) confBiasUpdate vs confBiasUpdatePar
-//    (C) simulación completa (simulate con update secuencial vs paralelo)
-//
-//  Cómo correr en IntelliJ:
-//    Abre este archivo -> botón verde ▶ junto a "object Analisis243" -> Run.
-//    La salida (tablas) aparece en el panel Run. Cópialas al informe (sección 6.4).
-// ============================================================================
+package Analisis
 
 import Comete._
 import Opinion._
-import Benchmark._   // tiempoDe, compararMedidasPol, compararFuncionesAct, midlyBelief, i2, ...
+import Benchmark._
 
 object Analisis243 {
 
@@ -23,10 +10,6 @@ object Analisis243 {
 
     val likert5: DistributionValues = Vector(0.0, 0.25, 0.5, 0.75, 1.0)
 
-    // ========================================================================
-    //  GENERACIÓN DE ENTRADAS con una expresión 'for':
-    //  creencias "medianamente polarizadas" de tamaños 2^2, 2^3, ..., 2^15.
-    // ========================================================================
     val sbms: Seq[SpecificBelief] = for {
       n    <- 2 until 16
       nags  = math.pow(2, n).toInt
@@ -34,11 +17,17 @@ object Analisis243 {
 
     // ========================================================================
     //  (A) rho vs rhoPar   -> compararMedidasPol
-    //  Devuelve séxtuplas: (n, p1, p2, t1, t2, aceleracion)
+    //  rho es O(n) con trabajo trivial por elemento; se prueba con redes MUCHO
+    //  más grandes (hasta 2^20 ~ 1 millón de agentes) para ver si aparece un
+    //  crossover donde rhoPar empiece a ser más rápida.
     // ========================================================================
+    val sbmsMedida: Seq[SpecificBelief] = for {
+      n    <- 2 to 20
+      nags  = math.pow(2, n).toInt
+    } yield midlyBelief(nags)
     val polSec = rho(1.2, 1.2)
     val polPar = rhoPar(1.2, 1.2)
-    val cmpMed = compararMedidasPol(sbms, likert5, polSec, polPar)
+    val cmpMed = compararMedidasPol(sbmsMedida, likert5, polSec, polPar)
 
     println("=" * 82)
     println("(A) rho (secuencial) vs rhoPar (paralelo)")
@@ -51,10 +40,6 @@ object Analisis243 {
 
     // ========================================================================
     //  (B) confBiasUpdate vs confBiasUpdatePar   -> compararFuncionesAct
-    //  La actualización es O(n^2); usamos las creencias hasta 2^11.
-    //  Un único grafo grande (i2 del mayor tamaño), como en el enunciado.
-    //  (Válido porque confBiasUpdate usa b.length.)
-    //  Devuelve cuádruplas: (n, t1, t2, aceleracion)
     // ========================================================================
     val sbmsAct = sbms.take(10)                 // 2^2 .. 2^11
     val grafoGrande = i2(sbmsAct.last.length)   // i2 del mayor de esos tamaños
@@ -72,7 +57,6 @@ object Analisis243 {
 
     // ========================================================================
     //  (C) Simulación completa: simulate con update secuencial vs paralelo.
-    //  Medimos el tiempo total de 'pasos' unidades de tiempo con tiempoDe.
     // ========================================================================
     val pasos = 10
     println()
@@ -92,6 +76,6 @@ object Analisis243 {
     }
 
     println()
-    println("Listo. Copia las tres tablas al informe (seccion 6.4).")
+
   }
 }

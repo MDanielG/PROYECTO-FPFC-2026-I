@@ -112,7 +112,8 @@ package object Opinion {
 
   def confBiasUpdate(b: SpecificBelief, swg: SpecificWeightedGraph): SpecificBelief = {
 
-    val (graf, n) = swg  //desempaca
+    val (graf, _) = swg  // solo usamos la función de influencia; ignoramos el n del grafo
+    val n = b.length     // el nº de agentes lo define la creencia, no el grafo
 
     // Para cada agente i calcular su nueva creencia
     Vector.tabulate(n) { i =>
@@ -135,7 +136,8 @@ package object Opinion {
 
   def confBiasUpdatePar(b: SpecificBelief, swg: SpecificWeightedGraph): SpecificBelief = {
 
-    val (graf, n) = swg  // desempaca igual que confBiasUpdate
+    val (graf, _) = swg  // solo la función de influencia; ignoramos el n del grafo
+    val n = b.length     // el nº de agentes lo define la creencia, no el grafo
 
     // PARALELISMO DE DATOS:
     // Cada agente i es independiente de los demas porque solo lee b (inmutable)

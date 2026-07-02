@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="PROYECTO FPFC,PROYECTO FPFC.main,PROYECTO FPFC.test,Taller Paralelismo de Tareas y Datos" />
-    <profile name="sbt 2" modules="Taller Paralelismo de Tareas y Datos.main,Taller Paralelismo de Tareas y Datos.test">
+    <profile name="sbt 1" modules="PROYECTO FPFC,PROYECTO FPFC.main,PROYECTO FPFC.test,PolarizacionRedes,Taller Paralelismo de Tareas y Datos" />
+    <profile name="sbt 2" modules="PolarizacionRedes.main,PolarizacionRedes.test,Taller Paralelismo de Tareas y Datos.main,Taller Paralelismo de Tareas y Datos.test">
       <option name="implicitConversions" value="true" />
       <option name="deprecationWarnings" value="true" />
     </profile>

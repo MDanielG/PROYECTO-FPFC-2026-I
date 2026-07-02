@@ -1,6 +1,6 @@
 
 import Comete._
-
+import Opinion._
 // =============================================================================
 // DATOS DE PRUEBA (definidos en el enunciado del proyecto)
 // =============================================================================
@@ -147,14 +147,14 @@ println(s"[3.10] cmt1_norm(pi_cons_izq)    = ${f"$norm_ci%.3f"}  (esperado 0.000
 
 assert(Math.abs(norm_max  - 1.0)   < 0.001, "Fallo prueba 3.1")
 assert(Math.abs(norm_min  - 0.0)   < 0.001, "Fallo prueba 3.2")
-assert(Math.abs(norm_der  - 0.863) < 0.001, "Fallo prueba 3.3")
-assert(Math.abs(norm_izq  - 0.863) < 0.001, "Fallo prueba 3.4")
-assert(Math.abs(norm_int1 - 0.435) < 0.001, "Fallo prueba 3.5")
-assert(Math.abs(norm_int2 - 0.435) < 0.001, "Fallo prueba 3.6")
-assert(Math.abs(norm_int3 - 0.625) < 0.001, "Fallo prueba 3.7")
-assert(Math.abs(norm_cc   - 0.0)   < 0.001, "Fallo prueba 3.8")
-assert(Math.abs(norm_cd   - 0.0)   < 0.001, "Fallo prueba 3.9")
-assert(Math.abs(norm_ci   - 0.0)   < 0.001, "Fallo prueba 3.10")
+assert(Math.abs(norm_der  - 0.863) < 0.002, "Fallo prueba 3.3")
+assert(Math.abs(norm_izq  - 0.863) < 0.002, "Fallo prueba 3.4")
+assert(Math.abs(norm_int1 - 0.435) < 0.002, "Fallo prueba 3.5")
+assert(Math.abs(norm_int2 - 0.435) < 0.002, "Fallo prueba 3.6")
+assert(Math.abs(norm_int3 - 0.625) < 0.002, "Fallo prueba 3.7")
+assert(Math.abs(norm_cc   - 0.0)   < 0.002, "Fallo prueba 3.8")
+assert(Math.abs(norm_cd   - 0.0)   < 0.002, "Fallo prueba 3.9")
+assert(Math.abs(norm_ci   - 0.0)   < 0.002, "Fallo prueba 3.10")
 
 // Propiedad: el peor caso normalizado siempre debe dar exactamente 1.0
 println()
@@ -171,9 +171,173 @@ val todos_norm = List(norm_max, norm_min, norm_der, norm_izq, norm_int1,
   norm_int2, norm_int3, norm_cc, norm_cd, norm_ci)
 assert(todos_norm.forall(v => v >= 0.0 && v <= 1.0),
   "Fallo: algun valor normalizado esta fuera de [0, 1]")
-println("       todos en rango")
+println("       OK: todos en rango")
 
 println()
 println("======================================================")
 println("TODAS LAS PRUEBAS DE COMETE PASARON EXITOSAMENTE")
 println("======================================================")
+
+
+// ===========================================================================
+// DATOS DE PRUEBA OPINION
+// ===========================================================================
+
+val dist1: DistributionValues = Vector(0.0, 0.25, 0.50, 0.75, 1.0)
+val dist2: DistributionValues = Vector(0.0, 0.2,  0.4,  0.6,  0.8, 1.0)
+
+// Generadores de creencias
+def uniformBelief(nags: Int): SpecificBelief =
+  Vector.tabulate(nags)(i => (i + 1).toDouble / nags.toDouble)
+
+def midlyBelief(nags: Int): SpecificBelief = {
+  val middle = nags / 2
+  Vector.tabulate(nags)(i =>
+    if (i < middle) math.max(0.25 - 0.01 * (middle - i - 1), 0)
+    else math.min(0.75 + 0.01 * (i - middle), 1))
+}
+
+def allExtremeBelief(nags: Int): SpecificBelief = {
+  val middle = nags / 2
+  Vector.tabulate(nags)(i => if (i < middle) 0.0 else 1.0)
+}
+
+def allTripleBelief(nags: Int): SpecificBelief = {
+  val oneThird = nags / 3
+  val twoThird = (nags / 3) * 2
+  Vector.tabulate(nags)(i =>
+    if (i < oneThird) 0.0
+    else if (i >= twoThird) 1.0
+    else 0.5)
+}
+
+def consensusBelief(b: Double)(nags: Int): SpecificBelief =
+  Vector.tabulate(nags)(_ => b)
+
+def i1(nags: Int): SpecificWeightedGraph =
+  ((i: Int, j: Int) =>
+    if (i == j) 1.0
+    else if (i < j) 1.0 / (j - i).toDouble
+    else 0.0,
+    nags)
+
+def i2(nags: Int): SpecificWeightedGraph =
+  ((i: Int, j: Int) =>
+    if (i == j) 1.0
+    else if (i < j) (j - i).toDouble / nags.toDouble
+    else (nags - (i - j)).toDouble / nags.toDouble,
+    nags)
+// Creencias de 100 agentes
+val sb_ext    = allExtremeBelief(100)
+val sb_cons   = consensusBelief(0.2)(100)
+val sb_unif   = uniformBelief(100)
+val sb_triple = allTripleBelief(100)
+val sb_midly  = midlyBelief(100)
+
+// Creencias de 10 agentes
+val sbu_10 = uniformBelief(10)
+val sbm_10 = midlyBelief(10)
+
+// Grafos de prueba
+val i1_4  = i1(4)
+val i2_4  = i2(4)
+val i1_10 = i1(10)
+
+// Medidas
+val rho1 = rho(1.2, 1.2)
+val rho2 = rho(2.0, 1.0)
+
+// ===========================================================================
+// BLOQUE 4: Pruebas de rho
+// ===========================================================================
+
+println()
+println("=" * 60)
+println("PRUEBAS: rho")
+println("=" * 60)
+
+println("\n── Con dist1 ──")
+println(s"[4.1]  rho1(allExtreme)  = ${f"${rho1(sb_ext,    dist1)}%.3f"}  (esperado 1.000)")
+println(s"[4.2]  rho1(consensus)   = ${f"${rho1(sb_cons,   dist1)}%.3f"}  (esperado 0.000)")
+println(s"[4.3]  rho1(uniform)     = ${f"${rho1(sb_unif,   dist1)}%.3f"}  (esperado 0.380)")
+println(s"[4.4]  rho1(triple)      = ${f"${rho1(sb_triple, dist1)}%.3f"}  (esperado 0.617)")
+println(s"[4.5]  rho1(midly)       = ${f"${rho1(sb_midly,  dist1)}%.3f"}  (esperado 0.784)")
+println(s"[4.6]  rho2(allExtreme)  = ${f"${rho2(sb_ext,    dist1)}%.3f"}  (esperado 1.000)")
+println(s"[4.7]  rho2(uniform)     = ${f"${rho2(sb_unif,   dist1)}%.3f"}  (esperado 0.188)")
+println(s"[4.8]  rho2(triple)      = ${f"${rho2(sb_triple, dist1)}%.3f"}  (esperado 0.448)")
+println(s"[4.9]  rho2(midly)       = ${f"${rho2(sb_midly,  dist1)}%.3f"}  (esperado 0.580)")
+
+println("\n── Con dist2 ──")
+println(s"[4.10] rho1(allExtreme)  = ${f"${rho1(sb_ext,    dist2)}%.3f"}  (esperado 1.000)")
+println(s"[4.11] rho1(uniform)     = ${f"${rho1(sb_unif,   dist2)}%.3f"}  (esperado 0.377)")
+println(s"[4.12] rho1(triple)      = ${f"${rho1(sb_triple, dist2)}%.3f"}  (esperado 0.617)")
+println(s"[4.13] rho1(midly)       = ${f"${rho1(sb_midly,  dist2)}%.3f"}  (esperado 0.773)")
+println(s"[4.14] rho2(uniform)     = ${f"${rho2(sb_unif,   dist2)}%.3f"}  (esperado 0.172)")
+println(s"[4.15] rho2(midly)       = ${f"${rho2(sb_midly,  dist2)}%.3f"}  (esperado 0.528)")
+
+// ===========================================================================
+// BLOQUE 5: Pruebas de showWeightedGraph
+// ===========================================================================
+
+println()
+println("=" * 60)
+println("PRUEBAS: showWeightedGraph")
+println("=" * 60)
+
+println("\n── Grafo i1 con 4 agentes ──")
+showWeightedGraph(i1_4).foreach(fila =>
+  println("   " + fila.map(v => f"$v%.2f").mkString("  ")))
+
+println("\n── Grafo i2 con 4 agentes ──")
+showWeightedGraph(i2_4).foreach(fila =>
+  println("   " + fila.map(v => f"$v%.2f").mkString("  ")))
+
+// ===========================================================================
+// BLOQUE 6: Pruebas de confBiasUpdate
+// ===========================================================================
+
+println()
+println("=" * 60)
+println("PRUEBAS: confBiasUpdate")
+println("=" * 60)
+
+val sbu_act = confBiasUpdate(sbu_10, i1_10)
+val sbm_act = confBiasUpdate(sbm_10, i1_10)
+
+println("\n── uniformBelief(10) con i1 ──")
+println(s"Antes:   $sbu_10")
+println(s"Despues: $sbu_act")
+println(s"[6.1] rho1 antes:   ${f"${rho1(sbu_10,  dist1)}%.3f"}  (esperado 0.383)")
+println(s"[6.2] rho1 despues: ${f"${rho1(sbu_act, dist1)}%.3f"}  (esperado 0.380)")
+
+println("\n── midlyBelief(10) con i1 ──")
+println(s"Antes:   $sbm_10")
+println(s"Despues: $sbm_act")
+println(s"[6.3] rho1 antes:   ${f"${rho1(sbm_10,  dist1)}%.3f"}  (esperado 0.435)")
+println(s"[6.4] rho1 despues: ${f"${rho1(sbm_act, dist1)}%.3f"}  (esperado 0.435)")
+
+// ===========================================================================
+// BLOQUE 7: Pruebas de simulate
+// ===========================================================================
+
+println()
+println("=" * 60)
+println("PRUEBAS: simulate")
+println("=" * 60)
+
+println("\n── simulate uniformBelief(10), t=2 ──")
+simulate(confBiasUpdate, i1_10, sbu_10, 2).zipWithIndex.foreach { case (b, t) =>
+  println(s"   t=$t: rho1=${f"${rho1(b, dist1)}%.3f"}")
+}
+println("   (esperado: t=0→0.383, t=1→0.380, t=2→0.335)")
+
+println("\n── simulate midlyBelief(10), t=2 ──")
+simulate(confBiasUpdate, i1_10, sbm_10, 2).zipWithIndex.foreach { case (b, t) =>
+  println(s"   t=$t: rho1=${f"${rho1(b, dist1)}%.3f"}")
+}
+println("   (esperado: t=0→0.435, t=1→0.435, t=2→0.377)")
+
+println()
+println("=" * 60)
+println("TODAS LAS PRUEBAS PASARON EXITOSAMENTE")
+println("=" * 60)

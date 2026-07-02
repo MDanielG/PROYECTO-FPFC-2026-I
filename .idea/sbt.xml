@@ -7,8 +7,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/project" />
+            <option value="C:\Users\danie\Documents\2026-I\FPFC\PROYECTO\PROYECTO FPFC" />
+            <option value="C:\Users\danie\Documents\2026-I\FPFC\PROYECTO\PROYECTO FPFC\project" />
           </set>
         </option>
         <option name="sbtVersion" value="1.9.9" />

@@ -75,7 +75,22 @@ object Analisis243 {
       println(f"$n%10d | $t1%14.4f | $t2%14.4f | $acel%8.2f")
     }
 
+    // ========================================================================
+    //  (D) GRÁFICAS: evolución de la polarización en el tiempo (simEvolucion).
+    // ========================================================================
+    val nGraf = 100
+    val opinionesIniciales: Seq[SpecificBelief] = Seq(
+      allExtremeBelief(nGraf),      // totalmente polarizada (mitad en 0, mitad en 1)
+      consensusBelief(0.2)(nGraf),  // consenso (todos en 0.2)
+      uniformBelief(nGraf),         // opiniones uniformemente repartidas
+      allTripleBelief(nGraf),       // tres polos (0, 0.5, 1)
+      midlyBelief(nGraf)            // medianamente polarizada
+    )
+    simEvolucion(opinionesIniciales, i2(nGraf), 20, polSec, confBiasUpdate, likert5,
+                 "Evolucion de la polarizacion")
+
     println()
+    println("Gráfica generada: revisa el archivo 'simulEvol.html' en la raíz del proyecto.")
 
   }
 }

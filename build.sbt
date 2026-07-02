@@ -1,10 +1,10 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / scalaVersion := "2.13.10"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "Taller Paralelismo de Tareas y Datos"
+    name := "PolarizacionRedes"
   )
 
 scalacOptions ++= Seq("-language:implicitConversions", "-deprecation")
@@ -13,3 +13,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.3",
   "org.scalameta" %% "munit" % "0.7.26" % Test
 )
+
+libraryDependencies +=
+  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
+libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.8.1"
+
